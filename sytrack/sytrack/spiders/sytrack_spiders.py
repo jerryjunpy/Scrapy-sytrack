@@ -7,6 +7,7 @@ from sytrack.settings import USER_AGENTS
 import random
 import json
 import datetime
+import jsonpath
 
 
 class SytrackSpider(scrapy.Spider):
@@ -18,21 +19,14 @@ class SytrackSpider(scrapy.Spider):
 
     useragent = random.choice(USER_AGENTS)
     headers = {
-        'Connection': 'keep-alive',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
-        'Acccept-Language': 'zh-CN,zh;q=0.9',
-        'Accept-Encoding': 'gzip, deflate',
         'Use-Agent': useragent,
         'Host': 'www.sypost.net',
-        'Upgrade-Insecure-Requests': 1,
-        'Cache-Control': 'max-age=0',
     }
 
     def start_requests(self):
         url = 'http://www.sypost.net/query'
         orderno = Orderno()
         syb_orderno = orderno.repleni_orderno()
-        print(len(syb_orderno))
 
         for connotNo in syb_orderno:
 
@@ -43,10 +37,11 @@ class SytrackSpider(scrapy.Spider):
 
         tracking_number = response.meta['tracking_number']
 
-        j = json.loads(response.text)
+        result = json.loads(response.text)
+        has = result.get('data')[0]['has']
 
-        if j['data'][0]['has'] == True:
-            item = SytrackItem(j=j, tracking_number=None)
+        if has == True:
+            item = SytrackItem(j=result, tracking_number=None)
             yield item
 
         else:
